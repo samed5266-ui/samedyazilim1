@@ -1,63 +1,29 @@
-name: Samed Panel APK Tam Otomatik
+name: Samed Panel APK Builder
 on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Kodlari Cek
+        uses: actions/checkout@v4
 
       - name: Java 17 Kurulumu
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: gradle
 
-      - name: Dosyalari Bul ve Yapilandir
-        run: |
-          # Klasörleri oluştur
-          mkdir -p app/src/main/java/com/samed/panel
-          mkdir -p app/src/main/res/layout
+      - name: Gradle Iznini Ver
+        run: chmod +x gradlew
 
-          # Dosyaları isimlerine bakmadan (küçük/büyük harf) bul ve taşı
-          find . -maxdepth 2 -iname "mainactivity.java" -exec mv {} app/src/main/java/com/samed/panel/MainActivity.java \;
-          find . -maxdepth 2 -iname "bootreceiver.java" -exec mv {} app/src/main/java/com/samed/panel/BootReceiver.java \;
-          find . -maxdepth 2 -iname "activity_main.xml" -exec mv {} app/src/main/res/layout/activity_main.xml \;
-          find . -maxdepth 2 -iname "androidmanifest.xml" -exec mv {} app/src/main/AndroidManifest.xml \;
-
-          # Gradle dosyalarını otomatik yaz
-          echo "include ':app'" > settings.gradle
-          echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.2.0' } }
-          allprojects { repositories { google(); mavenCentral() } }" > build.gradle
-
-          echo "plugins { id 'com.android.application' }
-          android {
-              namespace 'com.samed.panel'
-              compileSdk 34
-              defaultConfig {
-                  applicationId 'com.samed.panel'
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName '1.0'
-              }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.9.0'
-          }" > app/build.gradle
-
-          # Gradle motorunu kur
-          gradle wrapper
-
-      - name: APK'yi Derle
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+      - name: APK Derle
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: APK Dosyasini Yukle
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Samed-Panel-APK-Dosyasi
+          name: Samed-Panel-APK
           path: app/build/outputs/apk/debug/app-debug.apk
