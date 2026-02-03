@@ -1,20 +1,37 @@
-name: Samed Panel Builder
-on: [push, workflow_dispatch]
+name: Samed Panel APK Builder
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: set up JDK 17
+      - name: Projeyi Kopyala
+        uses: actions/checkout@v4
+
+      - name: Java 17 Kurulumu
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
-      - name: Build APK
-        run: bash gradlew assembleDebug
-      - name: Upload
+
+      # EĞER GRADLEW YOKSA OTOMATIK OLUSTURUR
+      - name: Gradle Wrapper Olustur
+        run: gradle wrapper
+
+      - name: Calistirma Izni Ver
+        run: chmod +x gradlew
+
+      - name: APK Derle
+        run: ./gradlew assembleDebug
+
+      - name: APK'yi Yukle
         uses: actions/upload-artifact@v4
         with:
-          name: SamedPanelAPK
+          name: Samed-Panel-APK
           path: app/build/outputs/apk/debug/app-debug.apk
