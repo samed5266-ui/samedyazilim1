@@ -1,16 +1,11 @@
-name: Samed Panel Kesin Cozum
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
+name: Samed Panel APK Builder
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Kodlari Cek
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Java Kurulumu
         uses: actions/setup-java@v4
@@ -18,30 +13,53 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Eksik Proje Dosyalarini Otomatik Olustur
+      - name: Proje Yapisini Sifirdan Kur
         run: |
-          # Eğer ana dizinde build.gradle yoksa oluştur
-          if [ ! -f "build.gradle" ]; then
-            echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.1.1' } }" > build.gradle
-            echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
-          fi
+          # Ana klasörleri oluştur
+          mkdir -p app/src/main/java/com/samed/panel
+          mkdir -p app/src/main/res/layout
           
-          # Eğer settings.gradle yoksa oluştur
-          if [ ! -f "settings.gradle" ]; then
-            echo "include ':app'" > settings.gradle
-          fi
+          # Dosyaları yerlerine taşı (Eğer ana dizindelerse)
+          [ -f MainActivity.java ] && mv MainActivity.java app/src/main/java/com/samed/panel/
+          [ -f mainactivity.java ] && mv mainactivity.java app/src/main/java/com/samed/panel/MainActivity.java
+          [ -f BootReceiver.java ] && mv BootReceiver.java app/src/main/java/com/samed/panel/
+          [ -f bootreceiver.java ] && mv bootreceiver.java app/src/main/java/com/samed/panel/BootReceiver.java
+          [ -f activity_main.xml ] && mv activity_main.xml app/src/main/res/layout/
+          [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
+          [ -f androidmanifest.xml ] && mv androidmanifest.xml app/src/main/AndroidManifest.xml
 
-          # Gradle Wrapper'ı zorla kur
+          # Ayar dosyalarını otomatik oluştur
+          echo "include ':app'" > settings.gradle
+          echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.1.1' } }" > build.gradle
+          echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
+          
+          # App build dosyasını oluştur
+          echo "plugins { id 'com.android.application' }
+          android {
+              namespace 'com.samed.panel'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.samed.panel'
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName '1.0'
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.9.0'
+          }" > app/build.gradle
+
+          # Gradle Wrapper'ı hazırla
           gradle wrapper
 
-      - name: Calistirma Izni Ver
-        run: chmod +x gradlew
-
       - name: APK Derle
-        run: ./gradlew assembleDebug
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      - name: APK Dosyasini Yukle
-        if: success()
+      - name: APK'yi Yukle
         uses: actions/upload-artifact@v4
         with:
           name: Samed-Panel-APK
