@@ -1,16 +1,11 @@
 name: Samed Panel APK Builder
-
-on:
-  push:
-    branches: [ "main", "master" ] # main veya master fark etmeksizin çalışır
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Projeyi Kopyala
+      - name: Kodlari Cek
         uses: actions/checkout@v4
 
       - name: Java 17 Kurulumu
@@ -18,27 +13,28 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      # Dosyalar gerçekten yerinde mi diye kontrol eder (Hata ayıklama için)
-      - name: Dosya Yapısını Listele
-        run: ls -R
-
-      - name: Gradle Calistirma Izinlerini Ver
+      - name: Stabil Gradle Kur (V8.5)
         run: |
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-          else
-            echo "HATA: gradlew dosyası ana dizinde bulunamadı!"
-            exit 1
-          fi
+          wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
+          sudo unzip -d /opt/gradle gradle-8.5-bin.zip
+          export PATH=$PATH:/opt/gradle/gradle-8.5/bin
+          gradle wrapper --gradle-version 8.5
+
+      - name: Android Ayarlarini Yap
+        run: |
+          # AndroidX ayarlarını zorla enjekte et
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
 
       - name: APK Derle
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
 
-      - name: APK'yı Sisteme Yukle
+      - name: APK Dosyasini Yukle
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: SamedPanel-Debug-APK
+          name: Samed-Panel-APK
           path: app/build/outputs/apk/debug/app-debug.apk
