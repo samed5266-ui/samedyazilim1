@@ -1,4 +1,4 @@
-name: Samed Panel APK Kesin Cozum
+name: Samed Panel Kesin Cozum
 on: [push, workflow_dispatch]
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Proje Yapisini ve Gradle'i Sifirdan Kur
+      - name: Proje Yapisini ve Gradle Motorunu Sifirdan Kur
         run: |
           # 1. Klasörleri temizce oluştur
           mkdir -p app/src/main/java/com/samed/panel
@@ -26,7 +26,7 @@ jobs:
           find . -maxdepth 2 -iname "activity_main.xml" -exec mv {} app/src/main/res/layout/activity_main.xml \;
           find . -maxdepth 2 -iname "androidmanifest.xml" -exec mv {} app/src/main/AndroidManifest.xml \;
 
-          # 3. Ayar dosyalarını otomatik oluştur (Hata payını sıfırlar)
+          # 3. Ayar dosyalarını hatasız oluştur
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           echo "include ':app'" > settings.gradle
@@ -54,7 +54,7 @@ jobs:
               implementation 'com.google.android.material:material:1.9.0'
           }" > app/build.gradle
 
-          # 4. EKSİK OLAN MOTORU (WRAPPER) SIFIRDAN KUR
+          # 4. HATA VEREN MOTORU (WRAPPER) SIFIRDAN INDIR VE KUR
           gradle wrapper --gradle-version 8.5
 
       - name: APK Derle
