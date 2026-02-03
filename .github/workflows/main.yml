@@ -1,4 +1,4 @@
-name: Samed Panel APK Builder
+name: Samed Panel APK Kesin Cozum
 on: [push, workflow_dispatch]
 
 jobs:
@@ -7,33 +7,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Java Kurulumu
+      - name: Java 17 Kurulumu
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Proje Yapisini Sifirdan Kur
+      - name: Proje Dosyalarini Duzenle ve Insa Et
         run: |
-          # Ana klasörleri oluştur
+          # 1. Klasör yapısını oluştur
           mkdir -p app/src/main/java/com/samed/panel
           mkdir -p app/src/main/res/layout
-          
-          # Dosyaları yerlerine taşı (Eğer ana dizindelerse)
-          [ -f MainActivity.java ] && mv MainActivity.java app/src/main/java/com/samed/panel/
-          [ -f mainactivity.java ] && mv mainactivity.java app/src/main/java/com/samed/panel/MainActivity.java
-          [ -f BootReceiver.java ] && mv BootReceiver.java app/src/main/java/com/samed/panel/
-          [ -f bootreceiver.java ] && mv bootreceiver.java app/src/main/java/com/samed/panel/BootReceiver.java
-          [ -f activity_main.xml ] && mv activity_main.xml app/src/main/res/layout/
-          [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
-          [ -f androidmanifest.xml ] && mv androidmanifest.xml app/src/main/AndroidManifest.xml
 
-          # Ayar dosyalarını otomatik oluştur
+          # 2. Senin dosyalarını (isimleri ne olursa olsun) yerlerine taşı
+          find . -maxdepth 1 -iname "mainactivity.java" -exec mv {} app/src/main/java/com/samed/panel/MainActivity.java \;
+          find . -maxdepth 1 -iname "bootreceiver.java" -exec mv {} app/src/main/java/com/samed/panel/BootReceiver.java \;
+          find . -maxdepth 1 -iname "activity_main.xml" -exec mv {} app/src/main/res/layout/activity_main.xml \;
+          find . -maxdepth 1 -iname "androidmanifest.xml" -exec mv {} app/src/main/AndroidManifest.xml \;
+
+          # 3. Gerekli build dosyalarını otomatik oluştur
           echo "include ':app'" > settings.gradle
-          echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.1.1' } }" > build.gradle
-          echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
           
-          # App build dosyasını oluştur
+          echo "buildscript { 
+            repositories { google(); mavenCentral() }
+            dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }" > build.gradle
+
           echo "plugins { id 'com.android.application' }
           android {
               namespace 'com.samed.panel'
@@ -51,15 +51,16 @@ jobs:
               implementation 'com.google.android.material:material:1.9.0'
           }" > app/build.gradle
 
-          # Gradle Wrapper'ı hazırla
+          # 4. Gradle Wrapper oluştur
           gradle wrapper
 
-      - name: APK Derle
+      - name: APK'yi Derle
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: APK'yi Yukle
+      - name: APK Dosyasini Yukle
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Samed-Panel-APK
