@@ -1,4 +1,4 @@
-name: Samed Panel Kesin Cozum
+name: Samed Panel APK Kesin Cozum
 on: [push, workflow_dispatch]
 
 jobs:
@@ -14,19 +14,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Projeyi Sifirdan Yapilandir
+      - name: Proje Yapisini ve Gradle'i Sifirdan Kur
         run: |
-          # 1. Klasörleri temizle ve kur
+          # 1. Klasörleri temizce oluştur
           mkdir -p app/src/main/java/com/samed/panel
           mkdir -p app/src/main/res/layout
 
-          # 2. Senin dosyalarını doğru yerlere taşı (Bulamazsa hata vermez)
+          # 2. Dosyaları (küçük/büyük harf bakmadan) yerlerine taşı
           find . -maxdepth 2 -iname "mainactivity.java" -exec mv {} app/src/main/java/com/samed/panel/MainActivity.java \;
           find . -maxdepth 2 -iname "bootreceiver.java" -exec mv {} app/src/main/java/com/samed/panel/BootReceiver.java \;
           find . -maxdepth 2 -iname "activity_main.xml" -exec mv {} app/src/main/res/layout/activity_main.xml \;
           find . -maxdepth 2 -iname "androidmanifest.xml" -exec mv {} app/src/main/AndroidManifest.xml \;
 
-          # 3. Ayar dosyalarını hatasız oluştur
+          # 3. Ayar dosyalarını otomatik oluştur (Hata payını sıfırlar)
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           echo "include ':app'" > settings.gradle
@@ -54,10 +54,11 @@ jobs:
               implementation 'com.google.android.material:material:1.9.0'
           }" > app/build.gradle
 
-      - name: Gradle Motorunu Yukle ve Derle
-        run: |
-          # Hata veren yer burasiydi, artik gradle wrapper'i sistemden cagiriyoruz
+          # 4. EKSİK OLAN MOTORU (WRAPPER) SIFIRDAN KUR
           gradle wrapper --gradle-version 8.5
+
+      - name: APK Derle
+        run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
