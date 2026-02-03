@@ -1,8 +1,8 @@
-name: Samed Panel Builder
+name: Samed Panel APK Builder
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ] # main veya master fark etmeksizin çalışır
   workflow_dispatch:
 
 jobs:
@@ -20,13 +20,24 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Gradle Dosyasini Calistirilabilir Yap
-        run: chmod +x gradlew
+      # Dosyalar gerçekten yerinde mi diye kontrol eder (Hata ayıklama için)
+      - name: Dosya Yapısını Listele
+        run: ls -R
 
-      - name: APK Derle (Debug)
-        run: ./gradlew assembleDebug
+      - name: Gradle Calistirma Izinlerini Ver
+        run: |
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+          else
+            echo "HATA: gradlew dosyası ana dizinde bulunamadı!"
+            exit 1
+          fi
 
-      - name: APK Dosyasini Sisteme Yukle
+      - name: APK Derle
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: APK'yı Sisteme Yukle
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: SamedPanel-Debug-APK
