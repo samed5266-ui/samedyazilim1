@@ -1,4 +1,4 @@
-name: Samed Panel Kesin Cozum
+name: Samed Panel APK Builder
 on: [push, workflow_dispatch]
 
 jobs:
@@ -14,55 +14,34 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Proje Yapisini ve Gradle Motorunu Sifirdan Kur
+      - name: Proje Yapisini ve Motoru Sifirdan Kur
         run: |
-          # 1. Klasörleri temizce oluştur
+          # 1. Klasörleri oluştur
           mkdir -p app/src/main/java/com/samed/panel
           mkdir -p app/src/main/res/layout
 
-          # 2. Dosyaları (küçük/büyük harf bakmadan) yerlerine taşı
-          find . -maxdepth 2 -iname "mainactivity.java" -exec mv {} app/src/main/java/com/samed/panel/MainActivity.java \;
-          find . -maxdepth 2 -iname "bootreceiver.java" -exec mv {} app/src/main/java/com/samed/panel/BootReceiver.java \;
-          find . -maxdepth 2 -iname "activity_main.xml" -exec mv {} app/src/main/res/layout/activity_main.xml \;
-          find . -maxdepth 2 -iname "androidmanifest.xml" -exec mv {} app/src/main/AndroidManifest.xml \;
+          # 2. Ana dizindeki dosyalarını yerlerine taşı
+          [ -f MainActivity.java ] && mv MainActivity.java app/src/main/java/com/samed/panel/
+          [ -f mainactivity.java ] && mv mainactivity.java app/src/main/java/com/samed/panel/MainActivity.java
+          [ -f BootReceiver.java ] && mv BootReceiver.java app/src/main/java/com/samed/panel/
+          [ -f bootreceiver.java ] && mv bootreceiver.java app/src/main/java/com/samed/panel/BootReceiver.java
+          [ -f activity_main.xml ] && mv activity_main.xml app/src/main/res/layout/
+          [ -f androidmanifest.xml ] && mv androidmanifest.xml app/src/main/AndroidManifest.xml
+          [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/AndroidManifest.xml
 
-          # 3. Ayar dosyalarını hatasız oluştur
+          # 3. Eksik olan motoru (Wrapper) SIFIRDAN kur
+          gradle wrapper --gradle-version 8.5
+
+          # 4. Ayarları AndroidX için zorla güncelle
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
-          echo "include ':app'" > settings.gradle
-          
-          echo "buildscript { 
-            repositories { google(); mavenCentral() }
-            dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
-          }
-          allprojects { repositories { google(); mavenCentral() } }" > build.gradle
-
-          echo "plugins { id 'com.android.application' }
-          android {
-              namespace 'com.samed.panel'
-              compileSdk 34
-              defaultConfig {
-                  applicationId 'com.samed.panel'
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName '1.0'
-              }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.9.0'
-          }" > app/build.gradle
-
-          # 4. HATA VEREN MOTORU (WRAPPER) SIFIRDAN INDIR VE KUR
-          gradle wrapper --gradle-version 8.5
 
       - name: APK Derle
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: APK Dosyasini Yukle
+      - name: APK'yi Yukle
         if: success()
         uses: actions/upload-artifact@v4
         with:
