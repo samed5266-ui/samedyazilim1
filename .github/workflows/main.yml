@@ -1,4 +1,4 @@
-name: Samed Panel APK Builder
+name: Samed Panel Kesin Cozum
 
 on:
   push:
@@ -8,21 +8,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Projeyi Kopyala
+      - name: Kodlari Cek
         uses: actions/checkout@v4
 
-      - name: Java 17 Kurulumu
+      - name: Java Kurulumu
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      # EĞER GRADLEW YOKSA OTOMATIK OLUSTURUR
-      - name: Gradle Wrapper Olustur
-        run: gradle wrapper
+      - name: Eksik Proje Dosyalarini Otomatik Olustur
+        run: |
+          # Eğer ana dizinde build.gradle yoksa oluştur
+          if [ ! -f "build.gradle" ]; then
+            echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.1.1' } }" > build.gradle
+            echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
+          fi
+          
+          # Eğer settings.gradle yoksa oluştur
+          if [ ! -f "settings.gradle" ]; then
+            echo "include ':app'" > settings.gradle
+          fi
+
+          # Gradle Wrapper'ı zorla kur
+          gradle wrapper
 
       - name: Calistirma Izni Ver
         run: chmod +x gradlew
@@ -30,7 +40,8 @@ jobs:
       - name: APK Derle
         run: ./gradlew assembleDebug
 
-      - name: APK'yi Yukle
+      - name: APK Dosyasini Yukle
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Samed-Panel-APK
