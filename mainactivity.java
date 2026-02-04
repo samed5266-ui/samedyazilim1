@@ -1,138 +1,66 @@
 package com.samed.panel;
 
+import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
-import android.view.WindowManager;
-import android.webkit.GeolocationPermissions;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.Calendar;
-
 public class MainActivity extends AppCompatActivity {
-
-    WebView webView;
-    Handler reloadHandler = new Handler();
-    Handler networkHandler = new Handler();
-    Handler dailyResetHandler = new Handler();
+    private WebView webView;
+    private Handler reloadHandler = new Handler();
+    private Handler networkHandler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Ekran kapanmasın
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        // Tam ekran
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-        );
-
         setContentView(R.layout.activity_main);
 
         webView = findViewById(R.id.webview);
-
-        WebSettings ws = webView.getSettings();
-        ws.setJavaScriptEnabled(true);
-        ws.setDomStorageEnabled(true);
-        ws.setDatabaseEnabled(true);
-        ws.setJavaScriptCanOpenWindowsAutomatically(true);
-        ws.setMediaPlaybackRequiresUserGesture(false);
-        ws.setCacheMode(WebSettings.LOAD_DEFAULT);
-        ws.setUserAgentString(
-                "Mozilla/5.0 (Linux; Android TV) AppleWebKit/537.36 Chrome/120 Safari/537.36"
-        );
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setUserAgentString("Mozilla/5.0 (Linux; Android 10; Android TV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.101 Safari/537.36");
 
         webView.setWebViewClient(new WebViewClient());
+        webView.loadUrl("https://samed5266.github.io/panel/");
 
-        // Konum izni: 1 kere sorar
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onGeolocationPermissionsShowPrompt(
-                    String origin, GeolocationPermissions.Callback callback) {
-                callback.invoke(origin, true, false);
-            }
-        });
+        startReloadTimer();
+        startNetworkCheck();
+    }
 
-        // Panel URL
-        webView.loadUrl("https://samedonline.gt.tc/boot.php");
-
-        // 5 dakikada bir reload (donma önleme)
+    // 5 DAKİKADA BİR YENİLEME (Sadece bu kaldı)
+    private void startReloadTimer() {
         reloadHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 webView.reload();
-                reloadHandler.postDelayed(this, 300000);
+                reloadHandler.postDelayed(this, 300000); // 300.000 ms = 5 Dakika
             }
         }, 300000);
+    }
 
-        // İnternet gidip gelme kontrolü
+    // İNTERNET KONTROLÜ (Sürekli yenileme yapan komutu buradan sildim)
+    private void startNetworkCheck() {
         networkHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (isOnline()) {
-                    webView.reload();
+                if (isNetworkAvailable()) {
+                    // Sayfa zaten açıksa dokunma, sadece internet kontrolü yap.
                 }
-                networkHandler.postDelayed(this, 15000);
+                networkHandler.postDelayed(this, 60000); // Kontrol sıklığı 1 dakikaya çıkarıldı
             }
-        }, 15000);
-
-        // Günde 1 kez gece reset (04:00)
-        scheduleDailyReset(4);
+        }, 60000);
     }
 
-    private boolean isOnline() {
-        ConnectivityManager cm =
-                (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        return netInfo != null && netInfo.isConnected();
-    }
-
-    private void scheduleDailyReset(int hour) {
-        Calendar now = Calendar.getInstance();
-        Calendar resetTime = Calendar.getInstance();
-        resetTime.set(Calendar.HOUR_OF_DAY, hour);
-        resetTime.set(Calendar.MINUTE, 0);
-        resetTime.set(Calendar.SECOND, 0);
-        if (resetTime.before(now)) {
-            resetTime.add(Calendar.DAY_OF_MONTH, 1);
-        }
-        long delay = resetTime.getTimeInMillis() - now.getTimeInMillis();
-
-        dailyResetHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                webView.reload();
-                scheduleDailyReset(hour); // tekrar
-            }
-        }, delay);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        webView.onResume();
-        webView.resumeTimers();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        webView.onPause();
-        webView.pauseTimers();
-    }
-
-    @Override
-    public void onBackPressed() {
-        // geri tuşu kapalı (kiosk modu)
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
     }
 }
