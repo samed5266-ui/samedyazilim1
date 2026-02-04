@@ -7,11 +7,10 @@ import android.content.Intent;
 public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction()) ||
-            Intent.ACTION_POWER_CONNECTED.equals(intent.getAction())) {
-
+        // Cihaz açıldığında tetiklenir
+        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             Intent i = new Intent(context, MainActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // Uygulamayı yeni bir görev olarak başlat
             context.startActivity(i);
         }
     }
